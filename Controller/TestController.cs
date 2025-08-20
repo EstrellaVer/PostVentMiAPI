@@ -28,10 +28,12 @@ namespace MiApi.Controllers
             }
         }
 
+
         [HttpGet("/")]
         public IActionResult Home()
         {
             return Content("<h1>API funcionando correctamente</h1>", "text/html");
         }
+
     }
 }

@@ -38,7 +38,7 @@ app.UseAuthorization();
 app.MapControllers();
 
 // Puerto asignado por Railway
-var portRailway = Environment.GetEnvironmentVariable("PORT") ?? "5001";
+var portRailway = Environment.GetEnvironmentVariable("PORT") ?? "5000";
 app.Urls.Add($"http://0.0.0.0:{portRailway}");
 
 app.Run();
