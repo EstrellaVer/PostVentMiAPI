@@ -4,27 +4,53 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Variables de entorno correctas para Railway
-var host = Environment.GetEnvironmentVariable("MYSQLHOST") ?? "localhost";
-var port = Environment.GetEnvironmentVariable("MYSQLPORT") ?? "3306";
-var database = Environment.GetEnvironmentVariable("MYSQLDATABASE") ?? "railway";
-var user = Environment.GetEnvironmentVariable("MYSQLUSER") ?? "root";
-var password = Environment.GetEnvironmentVariable("MYSQLPASSWORD") ?? "";
+Console.WriteLine("🚀 Iniciando aplicación...");
+
+// Variables de entorno para Railway
+var host = Environment.GetEnvironmentVariable("MYSQLHOST");
+var port = Environment.GetEnvironmentVariable("MYSQLPORT");
+var database = Environment.GetEnvironmentVariable("MYSQLDATABASE");
+var user = Environment.GetEnvironmentVariable("MYSQLUSER");
+var password = Environment.GetEnvironmentVariable("MYSQLPASSWORD");
+var portRailway = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+
+Console.WriteLine($"Variables de entorno:");
+Console.WriteLine($"- MYSQLHOST: {host ?? "NULL"}");
+Console.WriteLine($"- MYSQLPORT: {port ?? "NULL"}");
+Console.WriteLine($"- MYSQLDATABASE: {database ?? "NULL"}");
+Console.WriteLine($"- MYSQLUSER: {user ?? "NULL"}");
+Console.WriteLine($"- MYSQLPASSWORD: {(string.IsNullOrEmpty(password) ? "NULL" : "SET")}");
+Console.WriteLine($"- PORT: {portRailway}");
+
+// Fallbacks para desarrollo local
+host = host ?? "localhost";
+port = port ?? "3306";
+database = database ?? "railway";
+user = user ?? "root";
+password = password ?? "";
 
 var connectionString = $"Server={host};Port={port};Database={database};User={user};Password={password};";
 
-Console.WriteLine($"Conexión DB: Server={host};Port={port};Database={database};User={user}");
+Console.WriteLine($"📡 Connection String: Server={host};Port={port};Database={database};User={user};Password=***");
 
-// Configurar EF Core con MySQL
-builder.Services.AddDbContext<AppDbContext>(options =>
+try
 {
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
-    // Opcional: Habilitar logging sensible para development
-    if (builder.Environment.IsDevelopment())
+    // Configurar EF Core con MySQL
+    builder.Services.AddDbContext<AppDbContext>(options =>
     {
-        options.EnableSensitiveDataLogging();
-    }
-});
+        options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+        if (builder.Environment.IsDevelopment())
+        {
+            options.EnableSensitiveDataLogging();
+            options.LogTo(Console.WriteLine);
+        }
+    });
+    Console.WriteLine("✅ DbContext configurado correctamente");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"❌ Error configurando DbContext: {ex.Message}");
+}
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -44,53 +70,90 @@ builder.Services.AddLogging(logging =>
     logging.SetMinimumLevel(LogLevel.Information);
 });
 
-// Puerto para Railway
-var portRailway = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+// IMPORTANTE: Configurar el puerto para Railway
 builder.WebHost.UseUrls($"http://0.0.0.0:{portRailway}");
+Console.WriteLine($"🌐 Configurado para escuchar en puerto: {portRailway}");
 
 var app = builder.Build();
 
-// Configurar Swagger para todos los entornos (útil para debug en Railway)
+Console.WriteLine($"🏗️ Aplicación construida, Entorno: {app.Environment.EnvironmentName}");
+
+// Swagger disponible en todos los entornos para debugging
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "MiApi V1");
-    c.RoutePrefix = string.Empty;
+    c.RoutePrefix = string.Empty; // Swagger en la raíz
 });
 
 // Middleware para logging de requests
 app.Use(async (context, next) =>
 {
-    Console.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - {context.Request.Method} {context.Request.Path}");
+    Console.WriteLine($"📥 {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} - {context.Request.Method} {context.Request.Path}");
     await next();
 });
 
-// NO uses UseHttpsRedirection en Railway a menos que tengas SSL configurado
+// NO usar HTTPS redirect en Railway
 // app.UseHttpsRedirection();
 
 app.UseAuthorization();
 app.MapControllers();
 
 // Verificar conexión a DB al iniciar
+Console.WriteLine("🔍 Verificando conexión a base de datos...");
 try
 {
     using (var scope = app.Services.CreateScope())
     {
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        
+        Console.WriteLine("🔄 Intentando conectar a DB...");
         var canConnect = context.Database.CanConnect();
-        Console.WriteLine($"Conexión a DB: {(canConnect ? "✅ Exitosa" : "❌ Fallida")}");
         
         if (canConnect)
         {
+            Console.WriteLine("✅ Conexión a DB exitosa!");
+            
+            // Intentar crear las tablas si no existen
+            Console.WriteLine("🔄 Verificando/creando tablas...");
+            context.Database.EnsureCreated();
+            
             var count = context.Usuarios.Count();
-            Console.WriteLine($"Usuarios en DB: {count}");
+            Console.WriteLine($"📊 Usuarios en DB: {count}");
+        }
+        else
+        {
+            Console.WriteLine("❌ No se pudo conectar a la base de datos");
         }
     }
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"❌ Error al conectar con DB: {ex.Message}");
+    Console.WriteLine($"❌ Error al verificar DB: {ex.Message}");
+    Console.WriteLine($"❌ Stack trace: {ex.StackTrace}");
 }
 
-Console.WriteLine($"🚀 API iniciada en puerto {portRailway}");
+// Endpoint simple de health check
+app.MapGet("/health", () =>
+{
+    Console.WriteLine("🏥 Health check solicitado");
+    return Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow });
+});
+
+// Endpoint raíz
+app.MapGet("/", () =>
+{
+    Console.WriteLine("🏠 Endpoint raíz solicitado");
+    return Results.Content("<h1>🚀 API funcionando correctamente</h1><p><a href='/swagger'>Ver Swagger</a></p>", "text/html");
+});
+
+Console.WriteLine($"🎯 Aplicación lista para recibir requests en puerto {portRailway}");
+Console.WriteLine("📋 Endpoints disponibles:");
+Console.WriteLine("  - GET  /");
+Console.WriteLine("  - GET  /health");
+Console.WriteLine("  - GET  /swagger");
+Console.WriteLine("  - GET  /api/usuarios");
+Console.WriteLine("  - POST /api/usuarios");
+Console.WriteLine("  - POST /api/usuarios/login");
+
 app.Run();
