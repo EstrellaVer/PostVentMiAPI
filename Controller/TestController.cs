@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using MySqlConnector;
-using Microsoft.Extensions.Configuration;
-using System;
+using MiApi.Data;
 
 namespace MiApi.Controllers
 {
@@ -9,11 +7,11 @@ namespace MiApi.Controllers
     [Route("api/[controller]")]
     public class TestController : ControllerBase
     {
-        private readonly IConfiguration _configuration;
+        private readonly AppDbContext _context;
 
-        public TestController(IConfiguration configuration)
+        public TestController(AppDbContext context)
         {
-            _configuration = configuration;
+            _context = context;
         }
 
         [HttpGet("test-db")]
@@ -21,17 +19,19 @@ namespace MiApi.Controllers
         {
             try
             {
-                var connectionString = _configuration.GetConnectionString("DefaultConnection");
-                using (var connection = new MySqlConnection(connectionString))
-                {
-                    connection.Open();
-                    return Ok("Conexión a DB exitosa!");
-                }
+                var count = _context.Usuarios.Count();
+                return Ok($"Conexión a DB exitosa! Usuarios en la tabla: {count}");
             }
             catch (Exception ex)
             {
                 return BadRequest($"Error de conexión: {ex.Message}");
             }
+        }
+
+        [HttpGet("/")]
+        public IActionResult Home()
+        {
+            return Content("<h1>API funcionando correctamente</h1>", "text/html");
         }
     }
 }
