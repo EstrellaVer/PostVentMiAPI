@@ -3262,6 +3262,7 @@
       "Microsoft.AspNetCore.OpenApi >= 9.0.8",
       "Microsoft.EntityFrameworkCore >= 9.0.0",
       "Microsoft.EntityFrameworkCore.Design >= 9.0.0",
+      "MySqlConnector >= 2.4.0",
       "Pomelo.EntityFrameworkCore.MySql >= 9.0.0",
       "Swashbuckle.AspNetCore >= 6.6.0"
     ]
@@ -3322,6 +3323,10 @@
             "suppressParent": "All",
             "target": "Package",
             "version": "[9.0.0, )"
+          },
+          "MySqlConnector": {
+            "target": "Package",
+            "version": "[2.4.0, )"
           },
           "Pomelo.EntityFrameworkCore.MySql": {
             "target": "Package",
