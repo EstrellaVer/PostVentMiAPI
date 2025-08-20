@@ -121,3 +121,4 @@
 /Users/estrellaverdiguel/Documents/PostventaAPI/MiApi/obj/Debug/net9.0/MiApi.pdb
 /Users/estrellaverdiguel/Documents/PostventaAPI/MiApi/obj/Debug/net9.0/MiApi.genruntimeconfig.cache
 /Users/estrellaverdiguel/Documents/PostventaAPI/MiApi/obj/Debug/net9.0/ref/MiApi.dll
+/Users/estrellaverdiguel/Documents/PostventaAPI/MiApi/obj/Debug/net9.0/MiApi.sourcelink.json
