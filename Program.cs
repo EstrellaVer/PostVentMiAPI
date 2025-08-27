@@ -7,11 +7,11 @@ var builder = WebApplication.CreateBuilder(args);
 Console.WriteLine("🚀 Iniciando aplicación...");
 
 // Variables de entorno para Railway
-var host = Environment.GetEnvironmentVariable("MYSQLHOST");
-var port = Environment.GetEnvironmentVariable("MYSQLPORT");
-var database = Environment.GetEnvironmentVariable("MYSQLDATABASE");
-var user = Environment.GetEnvironmentVariable("MYSQLUSER");
-var password = Environment.GetEnvironmentVariable("MYSQLPASSWORD");
+var host = Environment.GetEnvironmentVariable("MYSQL_HOST");
+var port = Environment.GetEnvironmentVariable("MYSQL_PORT");
+var database = Environment.GetEnvironmentVariable("MYSQL_DATABASE");
+var user = Environment.GetEnvironmentVariable("MYSQL_USER");
+var password = Environment.GetEnvironmentVariable("MYSQL_PASSWORD");
 var portRailway = Environment.GetEnvironmentVariable("PORT") ?? "5000";
 
 Console.WriteLine($"Variables de entorno:");
@@ -116,7 +116,7 @@ try
             
             // Intentar crear las tablas si no existen
             Console.WriteLine("🔄 Verificando/creando tablas...");
-            context.Database.EnsureCreated();
+            context.Database.Migrate();
             
             var count = context.Usuarios.Count();
             Console.WriteLine($"📊 Usuarios en DB: {count}");
